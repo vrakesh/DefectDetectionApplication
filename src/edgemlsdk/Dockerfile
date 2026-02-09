@@ -69,7 +69,7 @@ RUN if [ "$OS" = "18.04" ]; then \
         rm /etc/apt/trusted.gpg.d/kitware.gpg && \
         apt-get update && \
         apt-get install cmake=3.21.3-0kitware1ubuntu18.04.1 cmake-data=3.21.3-0kitware1ubuntu18.04.1 -y; \
-    else \
+    elif [ "$OS" = "20.04" ]; then \
         apt-get install -y software-properties-common lsb-release && \
         apt-get clean all && \
         wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | gpg --dearmor - | tee /etc/apt/trusted.gpg.d/kitware.gpg >/dev/null && \
@@ -80,6 +80,8 @@ RUN if [ "$OS" = "18.04" ]; then \
         rm /etc/apt/trusted.gpg.d/kitware.gpg && \
         apt-get update && \
         apt-get install cmake=3.21.3-0kitware1ubuntu20.04.1 cmake-data=3.21.3-0kitware1ubuntu20.04.1 -y; \
+    else \
+        apt-get install -y cmake; \
     fi
 
 # Install specific version of Python
@@ -295,7 +297,7 @@ RUN apt-get install ffmpeg -y
 # Install Triton Server and it's dependencies
 RUN apt-get update && \
     apt-get install rapidjson-dev libre2-dev -y
-RUN apt-get install python-dev -y
+RUN apt-get install python3-dev -y
 
 # Use --no-check-certificate to resolve following error
 # ERROR: cannot verify boostorg.jfrog.io's certificate, issued by 'CN=GeoTrust TLS RSA CA G1,OU=www.digicert.com,O=DigiCert Inc,C=US':
@@ -318,8 +320,8 @@ RUN cd /dependencies && \
     #./bootstrap.sh && \
     #./b2 install
 RUN apt-get install libnuma-dev -y \
-    && rm /usr/bin/python \
-    && ln -s /usr/bin/python3.9 /usr/bin/python
+    && rm -f /usr/bin/python \
+    && ln -sf /usr/bin/python3.9 /usr/bin/python
 
 RUN apt-get install libarchive-dev -y
 

@@ -47,28 +47,36 @@ cd src
 cd edgemlsdk/
 ./build.sh -p $(uname -m) -u $IMAGE_VER 3.9
 cd ..
-mkdir backend/edgemlsdk
-cp -r edgemlsdk backend/edgemlsdk
-echo copying $id
+# Setup EdgeML SDK and Python modules for C++ backend
+mkdir -p backend_cpp/edgemlsdk/debs
+mkdir -p backend_cpp/edgemlsdk/tars
+mkdir -p backend_cpp/edgemlsdk/include
+
+echo "Extracting EdgeML SDK binaries..."
 id=$(docker create edgemlsdk)
-docker cp $id:/debs/PanoramaSDK.deb $(pwd)/backend/edgemlsdk/
-docker cp $id:/debs/aws-c-iot.deb $(pwd)/backend/edgemlsdk/
-docker cp $id:/debs/aws-crt-cpp.deb $(pwd)/backend/edgemlsdk/
-docker cp $id:/debs/aws-iot-device-sdk-cpp-v2.deb $(pwd)/backend/edgemlsdk/
-docker cp $id:/debs/aws-sdk-cpp.deb $(pwd)/backend/edgemlsdk/
-docker cp $id:/debs/libgstreamer-plugins-base1.0-dev.deb $(pwd)/backend/edgemlsdk/
-docker cp $id:/debs/libgstreamer1.0-dev.deb $(pwd)/backend/edgemlsdk/
-docker cp $id:/debs/libgstreamer1.0.deb $(pwd)/backend/edgemlsdk/
-docker cp $id:/debs/liborc-0.4-0.deb $(pwd)/backend/edgemlsdk/
-docker cp $id:/debs/libstdc++6.deb $(pwd)/backend/edgemlsdk/
-docker cp $id:/debs/openssl.deb $(pwd)/backend/edgemlsdk/
-docker cp $id:/debs/panorama.whl $(pwd)/backend/edgemlsdk/panorama-1.0-py3-none-any.whl
-docker cp $id:/debs/triton-core.deb $(pwd)/backend/edgemlsdk/
-docker cp $id:/debs/triton-python-backend.deb $(pwd)/backend/edgemlsdk/
-docker cp $id:/tars/triton_installation_files.tar.gz  $(pwd)/backend/edgemlsdk/
+
+# Copy EdgeML SDK binaries to C++ backend
+docker cp $id:/debs/PanoramaSDK.deb $(pwd)/backend_cpp/edgemlsdk/debs/
+docker cp $id:/debs/aws-c-iot.deb $(pwd)/backend_cpp/edgemlsdk/debs/
+docker cp $id:/debs/aws-crt-cpp.deb $(pwd)/backend_cpp/edgemlsdk/debs/
+docker cp $id:/debs/aws-iot-device-sdk-cpp-v2.deb $(pwd)/backend_cpp/edgemlsdk/debs/
+docker cp $id:/debs/aws-sdk-cpp.deb $(pwd)/backend_cpp/edgemlsdk/debs/
+docker cp $id:/debs/liborc-0.4-0.deb $(pwd)/backend_cpp/edgemlsdk/debs/
+docker cp $id:/debs/openssl.deb $(pwd)/backend_cpp/edgemlsdk/debs/
+docker cp $id:/debs/triton-core.deb $(pwd)/backend_cpp/edgemlsdk/debs/
+docker cp $id:/debs/triton-python-backend.deb $(pwd)/backend_cpp/edgemlsdk/debs/
+docker cp $id:/tars/triton_installation_files.tar.gz $(pwd)/backend_cpp/edgemlsdk/tars/
+
+# Copy Panorama SDK include files for C++ compilation
+cp -r edgemlsdk/src/include/* $(pwd)/backend_cpp/edgemlsdk/include/ 2>/dev/null || true
+
 docker rm -v $id
-echo done copying binaries
-# rest of the application
+echo "Done copying EdgeML SDK binaries"
+
+# Python modules for model conversion (dda_triton, lyra_*) are already in backend_cpp/
+# No need to copy them during build - they are maintained in the repository
+
+# Build using docker-compose (builds C++ backend as flask-app)
 docker-compose --profile tegra --profile generic -f docker-compose.yaml build --build-arg OS=$IMAGE_VER --no-cache
 cd ..
 # save Docker images as tar
